@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import Particles from '@tsparticles/react';
@@ -41,6 +41,9 @@ function App() {
   const [success, setSuccess] = useState('');
   const [openForm, setOpenForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Ref for smooth scrolling to the View Recipe modal
+  const viewModalRef = useRef(null);
 
   const particlesInit = useCallback(async (engine) => {
     await loadSlim(engine);
@@ -123,6 +126,13 @@ function App() {
 
   const handleView = (recipe) => {
     setViewRecipe(recipe);
+    // Smooth scroll to the modal when it opens
+    setTimeout(() => {
+      viewModalRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }, 150);
   };
 
   const handleDelete = async (id) => {
@@ -153,7 +163,6 @@ function App() {
     'https://images.unsplash.com/photo-1659275799237-cbc057d97e7f?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     'https://media.istockphoto.com/id/1314329942/photo/goal-gappa-or-pani-puri.webp?a=1&b=1&s=612x612&w=0&k=20&c=gipl8gjcid4yNp9cIjVEvhyAFdlFyplwGXYgRv0jdoI=',
     'https://media.istockphoto.com/id/504338599/photo/tender-beef-nihari.jpg?s=612x612&w=0&k=20&c=slp7Wnsi03ICCR3c-fBa0DxxhQjhPiV92PKXSdVOsmU=',
- 
   ];
 
   return (
@@ -637,9 +646,10 @@ function App() {
           </Fab>
         </motion.div>
 
-        {/* View Modal – Epic Entrance */}
+        {/* View Modal – Epic Entrance with Smooth Scroll */}
         <Modal open={!!viewRecipe} onClose={() => setViewRecipe(null)}>
           <motion.div 
+            ref={viewModalRef}
             initial={{ opacity: 0, scale: 0.7, rotate: -10 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             exit={{ opacity: 0, scale: 0.7 }}
@@ -710,7 +720,7 @@ function App() {
           </motion.div>
         </Modal>
 
-        {/* Add/Edit Modal – Magical Entrance */}
+        {/* Add/Edit Modal – Magical Entrance with Full Scrolling */}
         <Modal open={openForm} onClose={() => setOpenForm(false)}>
           <motion.div 
             initial={{ opacity: 0, scale: 0.5, rotateY: 180 }}
@@ -724,22 +734,46 @@ function App() {
               left: '50%', 
               transform: 'translate(-50%, -50%)', 
               width: { xs: '95%', md: 800 }, 
+              maxHeight: '90vh',
+              overflow: 'auto', // Full up/down/left/right scrolling enabled
               p: 6, 
               borderRadius: 6,
               bgcolor: 'rgba(255,255,255,0.98)',
-              boxShadow: '0 30px 80px rgba(0,0,0,0.4)'
+              boxShadow: '0 30px 80px rgba(0,0,0,0.4)',
+              display: 'flex',
+              flexDirection: 'column'
             }}>
-              <IconButton onClick={() => setOpenForm(false)} sx={{ position: 'absolute', top: 20, right: 20 }}>
+              <IconButton onClick={() => setOpenForm(false)} sx={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}>
                 <CloseIcon />
               </IconButton>
               <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold', background: 'linear-gradient(45deg, #ff006e, #3a86ff)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' }}>
                 {selectedRecipe ? 'Edit Magical Recipe' : 'Create New Masterpiece'}
               </Typography>
-              <Box component="form" onSubmit={handleSubmit} sx={{ mt: 5 }}>
+              <Box component="form" onSubmit={handleSubmit} sx={{ mt: 5, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                 <TextField label="Recipe Name" fullWidth value={name} onChange={(e) => setName(e.target.value)} margin="normal" required />
-                <TextField label="Ingredients (comma separated)" fullWidth multiline rows={5} value={ingredients} onChange={(e) => setIngredients(e.target.value)} margin="normal" required />
-                <TextField label="Instructions (one step per line)" fullWidth multiline rows={8} value={instructions} onChange={(e) => setInstructions(e.target.value)} margin="normal" required />
-                <Button variant="outlined" component="label" fullWidth sx={{ mt: 4, py: 5, borderRadius: 4 }}>
+                <TextField 
+                  label="Ingredients (comma separated)" 
+                  fullWidth 
+                  multiline 
+                  rows={6} 
+                  value={ingredients} 
+                  onChange={(e) => setIngredients(e.target.value)} 
+                  margin="normal" 
+                  required 
+                  sx={{ mb: 2 }}
+                />
+                <TextField 
+                  label="Instructions (one step per line)" 
+                  fullWidth 
+                  multiline 
+                  rows={12} 
+                  value={instructions} 
+                  onChange={(e) => setInstructions(e.target.value)} 
+                  margin="normal" 
+                  required 
+                  sx={{ mb: 3 }}
+                />
+                <Button variant="outlined" component="label" fullWidth sx={{ mt: 2, py: 5, borderRadius: 4 }}>
                   {image ? 'Change Magical Photo' : 'Upload Delicious Photo'}
                   <input type="file" hidden accept="image/*" onChange={handleImageChange} />
                 </Button>
@@ -750,13 +784,12 @@ function App() {
                     </Box>
                   </motion.div>
                 )}
-                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} sx={{ mt: 'auto', pt: 4 }}>
                   <Button 
                     type="submit" 
                     variant="contained" 
                     fullWidth 
                     sx={{ 
-                      mt: 6, 
                       py: 4, 
                       fontSize: '1.8rem',
                       borderRadius: 50,
